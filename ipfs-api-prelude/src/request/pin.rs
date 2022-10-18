@@ -46,3 +46,25 @@ pub struct PinRm<'a> {
 impl<'a> ApiRequest for PinRm<'a> {
     const PATH: &'static str = "/pin/rm";
 }
+
+#[derive(Serialize)]
+pub struct PinRemoteAdd<'a> {
+    #[serde(rename = "arg")]
+    pub key: &'a str,
+    pub name: &'a str,
+    pub service: &'a str,
+    pub background: Option<bool>,
+}
+
+impl<'a> ApiRequest for PinRemoteAdd<'a> {
+    const PATH: &'static str = "/pin/remote/add";
+}
+
+#[derive(Serialize)]
+pub struct PinRemoteServiceLs {
+    pub stat: Option<bool>,
+}
+
+impl ApiRequest for PinRemoteServiceLs {
+    const PATH: &'static str = "/pin/remote/service/ls";
+}

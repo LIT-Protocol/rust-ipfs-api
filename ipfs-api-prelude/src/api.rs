@@ -2077,6 +2077,65 @@ pub trait IpfsApi: Backend {
 
     // TODO /pin/verify
 
+    /// Pins a new object with a remote peer.
+    ///
+    /// As per: https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-pin-remote-add
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ipfs_api::{IpfsApi, IpfsClient};
+    ///
+    /// let client = IpfsClient::default();
+    /// let res = client.pin_remote_add("QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ", "hello-world", "pinata", true);
+    /// ```
+    ///
+    async fn pin_remote_add(
+        &self,
+        key: &str,
+        name: &str,
+        service: &str,
+        background: bool,
+    ) -> Result<response::PinRemoteAddResponse, Self::Error> {
+        self.request(
+            request::PinRemoteAdd {
+                key,
+                name,
+                service,
+                background: Some(background),
+            },
+            None,
+        )
+        .await
+    }
+
+
+    /// Pin remote service ls.
+    ///
+    /// As per: https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-pin-remote-service-ls
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ipfs_api::{IpfsApi, IpfsClient};
+    ///
+    /// let client = IpfsClient::default();
+    /// let res = client.pin_remote_service_ls(false);
+    /// ```
+    ///
+    async fn pin_remote_service_ls(
+        &self,
+        stat: bool,
+    ) -> Result<response::PinRemoteServiceLsResponse, Self::Error> {
+        self.request(
+            request::PinRemoteServiceLs {
+                stat: Some(stat),
+            },
+            None,
+        )
+        .await
+    }
+
     /// Pings a peer.
     ///
     /// ```no_run

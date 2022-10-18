@@ -40,6 +40,28 @@ pub struct PinRmResponse {
     pub pins: Vec<String>,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct PinRemoteAddResponse {
+    pub status: Option<String>,
+    pub cid: Option<String>,
+    pub name: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct PinRemoteServiceLsResponse {
+    #[serde(deserialize_with = "serde::deserialize_vec")]
+    pub remote_services: Vec<RemoteService>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct RemoteService {
+    pub service: Option<String>,
+    pub api_endpoint: Option<String>,
+}
+
 #[cfg(test)]
 mod tests {
     deserialize_test!(v0_pin_ls_0, PinLsResponse);
