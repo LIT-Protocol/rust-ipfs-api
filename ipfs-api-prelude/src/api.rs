@@ -2096,7 +2096,7 @@ pub trait IpfsApi: Backend {
         name: &str,
         service: &str,
         background: bool,
-    ) -> Result<response::PinRemoteAddResponse, Self::Error> {
+    ) -> Result<response::PinRemoteResponse, Self::Error> {
         self.request(
             request::PinRemoteAdd {
                 key,
@@ -2109,6 +2109,37 @@ pub trait IpfsApi: Backend {
         .await
     }
 
+    /// Queries the status of remote pins.
+    ///
+    /// As per: https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-pin-remote-ls
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ipfs_api::{IpfsApi, IpfsClient};
+    ///
+    /// let client = IpfsClient::default();
+    /// let res = client.pin_remote_ls(Some("pinata"), Some("hello-world"), Some("QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ"), None);
+    /// ```
+    ///
+    async fn pin_remote_ls(
+        &self,
+        service: Option<&str>,
+        name: Option<&str>,
+        key: Option<&str>,
+        status: Option<&str>,
+    ) -> Result<response::PinRemoteResponse, Self::Error> {
+        self.request(
+            request::PinRemoteLs {
+                service,
+                name,
+                key,
+                status,
+            },
+            None,
+        )
+        .await
+    }
 
     /// Pin remote service ls.
     ///

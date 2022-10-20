@@ -61,6 +61,19 @@ impl<'a> ApiRequest for PinRemoteAdd<'a> {
 }
 
 #[derive(Serialize)]
+pub struct PinRemoteLs<'a> {
+    pub service: Option<&'a str>,
+    #[serde(rename = "cid")]
+    pub key: Option<&'a str>,
+    pub name: Option<&'a str>,
+    pub status: Option<&'a str>,
+}
+
+impl<'a> ApiRequest for PinRemoteLs<'a> {
+    const PATH: &'static str = "/pin/remote/ls";
+}
+
+#[derive(Serialize)]
 pub struct PinRemoteServiceLs {
     pub stat: Option<bool>,
 }

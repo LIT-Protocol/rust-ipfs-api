@@ -42,7 +42,7 @@ pub struct PinRmResponse {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
-pub struct PinRemoteAddResponse {
+pub struct PinRemoteResponse {
     pub status: Option<String>,
     pub cid: Option<String>,
     pub name: Option<String>,
