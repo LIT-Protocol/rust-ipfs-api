@@ -1,4 +1,4 @@
-// Copyright 2021 rust-ipfs-api Developers
+// Copyright 2022 rust-ipfs-api Developers
 //
 // Licensed under the Apache License, Version 2.0, <LICENSE-APACHE or
 // http://apache.org/licenses/LICENSE-2.0> or the MIT license <LICENSE-MIT or
@@ -22,20 +22,23 @@ use hyper::{
 use ipfs_api_prelude::{ApiRequest, Backend, BoxStream, TryFromUri};
 use multipart::client::multipart;
 
-#[derive(Clone)]
-pub struct HyperBackend<C = HttpConnector>
-where
-    C: Connect + Clone + Send + Sync + 'static,
-{
-    base: Uri,
-    client: client::Client<C, hyper::Body>,
-}
-
 macro_rules! impl_default {
     ($http_connector:path) => {
         impl_default!($http_connector, <$http_connector>::new());
     };
     ($http_connector:path, $constructor:expr) => {
+        #[derive(Clone)]
+        pub struct HyperBackend<C = $http_connector>
+        where
+            C: Connect + Clone + Send + Sync + 'static,
+        {
+            base: Uri,
+            client: client::Client<C, hyper::Body>,
+
+            /// Username and password
+            credentials: Option<(String, String)>,
+        }
+
         impl Default for HyperBackend<$http_connector> {
             /// Creates an `IpfsClient` connected to the endpoint specified in ~/.ipfs/api.
             /// If not found, tries to connect to `localhost:5001`.
@@ -53,12 +56,25 @@ macro_rules! impl_default {
                     .pool_max_idle_per_host(0)
                     .build($constructor);
 
-                HyperBackend { base, client }
+                HyperBackend {
+                    base,
+                    client,
+                    credentials: None,
+                }
             }
         }
     };
 }
 
+// Because the Hyper TLS connector supports both HTTP and HTTPS,
+// if TLS is enabled, always use the TLS connector as default.
+//
+// Otherwise, compile errors will result due to ambiguity:
+//
+//   * "cannot infer type for struct `IpfsClient<_>`"
+//
+#[cfg(not(feature = "with-hyper-tls"))]
+#[cfg(not(feature = "with-hyper-rustls"))]
 impl_default!(HttpConnector);
 
 #[cfg(feature = "with-hyper-tls")]
@@ -74,6 +90,29 @@ impl_default!(
         .build()
 );
 
+impl<C: Connect + Clone + Send + Sync + 'static> HyperBackend<C> {
+    pub fn with_credentials<U, P>(self, username: U, password: P) -> Self
+    where
+        U: Into<String>,
+        P: Into<String>,
+    {
+        Self {
+            base: self.base,
+            client: self.client,
+            credentials: Some((username.into(), password.into())),
+        }
+    }
+
+    fn basic_authorization(&self) -> Option<String> {
+        self.credentials.as_ref().map(|(username, password)| {
+            let credentials = format!("{}:{}", username, password);
+            let encoded = base64::encode(credentials);
+
+            format!("Basic {}", encoded)
+        })
+    }
+}
+
 #[cfg_attr(feature = "with-send-sync", async_trait)]
 #[cfg_attr(not(feature = "with-send-sync"), async_trait(?Send))]
 impl<C> Backend for HyperBackend<C>
@@ -85,6 +124,14 @@ where
     type HttpResponse = http::Response<hyper::Body>;
 
     type Error = Error;
+
+    fn with_credentials<U, P>(self, username: U, password: P) -> Self
+    where
+        U: Into<String>,
+        P: Into<String>,
+    {
+        (self as HyperBackend<C>).with_credentials(username, password)
+    }
 
     fn build_base_request<Req>(
         &self,
@@ -98,6 +145,12 @@ where
 
         let builder = http::Request::builder();
         let builder = builder.method(Req::METHOD).uri(url);
+
+        let builder = if let Some(authorization) = self.basic_authorization() {
+            builder.header(hyper::header::AUTHORIZATION, authorization)
+        } else {
+            builder
+        };
 
         let req = if let Some(form) = form {
             form.set_body_convert::<hyper::Body, multipart::Body>(builder)
