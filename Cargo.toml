@@ -8,6 +8,3 @@ members = [
   "ipfs-api-prelude",
   "ipfs-api-versions",
 ]
-
-[dependencies]
-  enum-as-inner = "0.5.1"
