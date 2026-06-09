@@ -17,6 +17,7 @@ maintenance               = { status = "passively-maintained" }
 
 [features]
 with-builder              = ["ipfs-api-prelude/with-builder"]
+with-multiaddr            = ["ipfs-api-prelude/with-multiaddr"]
 
 [dependencies]
 actix-http                = "3"
