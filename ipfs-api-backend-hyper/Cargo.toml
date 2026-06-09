@@ -17,6 +17,7 @@ maintenance               = { status = "passively-maintained" }
 
 [features]
 with-builder              = ["ipfs-api-prelude/with-builder"]
+with-multiaddr            = ["ipfs-api-prelude/with-multiaddr"]
 with-hyper-tls            = ["hyper-tls"]
 with-hyper-rustls         = ["hyper-rustls"]
 with-send-sync            = ["ipfs-api-prelude/with-send-sync"]

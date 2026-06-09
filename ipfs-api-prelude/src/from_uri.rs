@@ -7,12 +7,13 @@
 //
 
 use http::uri::{Builder, InvalidUri, PathAndQuery, Scheme, Uri};
+#[cfg(feature = "with-multiaddr")]
 use multiaddr::{Multiaddr, Protocol};
-use std::{
-    fs,
-    net::{SocketAddr, SocketAddrV4, SocketAddrV6},
-    str::FromStr,
-};
+#[cfg(feature = "with-multiaddr")]
+use std::fs;
+use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6};
+#[cfg(feature = "with-multiaddr")]
+use std::str::FromStr;
 
 const VERSION_PATH_V0: &str = "/api/v0";
 
@@ -78,6 +79,7 @@ pub trait TryFromUri: Sized {
 
     /// Creates a new client from a multiaddr.
     ///
+    #[cfg(feature = "with-multiaddr")]
     fn from_multiaddr(multiaddr: Multiaddr) -> Result<Self, multiaddr::Error> {
         let mut scheme: Option<Scheme> = None;
         let mut port: Option<u16> = None;
@@ -126,6 +128,7 @@ pub trait TryFromUri: Sized {
 
     /// Creates a new client from a multiaddr.
     ///
+    #[cfg(feature = "with-multiaddr")]
     fn from_multiaddr_str(multiaddr: &str) -> Result<Self, multiaddr::Error> {
         multiaddr::from_url(multiaddr)
             .map_err(|e| multiaddr::Error::ParsingError(Box::new(e)))
@@ -135,12 +138,27 @@ pub trait TryFromUri: Sized {
 
     /// Creates a new client connected to the endpoint specified in ~/.ipfs/api.
     ///
+    /// Parsing the `~/.ipfs/api` multiaddr requires the `with-multiaddr` feature;
+    /// without it this always returns `None` (callers such as `Default` then fall
+    /// back to a default endpoint).
+    #[cfg(feature = "with-multiaddr")]
     #[inline]
     fn from_ipfs_config() -> Option<Self> {
         dirs::home_dir()
             .map(|home_dir| home_dir.join(".ipfs").join("api"))
             .and_then(|multiaddr_path| fs::read_to_string(&multiaddr_path).ok())
             .and_then(|multiaddr_str| Self::from_multiaddr_str(&multiaddr_str).ok())
+    }
+
+    /// Creates a new client connected to the endpoint specified in ~/.ipfs/api.
+    ///
+    /// Parsing the `~/.ipfs/api` multiaddr requires the `with-multiaddr` feature;
+    /// without it this always returns `None` (callers such as `Default` then fall
+    /// back to a default endpoint).
+    #[cfg(not(feature = "with-multiaddr"))]
+    #[inline]
+    fn from_ipfs_config() -> Option<Self> {
+        None
     }
 }
 
@@ -193,6 +211,7 @@ mod tests {
         test_from_host_and_port_1_ok (Scheme::HTTP, "ipfs.io", 9001) => "http://ipfs.io:9001/api/v0"
     );
 
+    #[cfg(feature = "with-multiaddr")]
     test_from_value_fn_ok!(
         [TryFromUri::from_multiaddr_str]:
         test_from_multiaddr_str_0_ok ("http://localhost:5001/") => "http://localhost:5001/api/v0",
